@@ -1,0 +1,20 @@
+node_modules/
+dist/
+
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+*.log
+*.tsbuildinfo
+.DS_Store
+
+.env
+.env.*
+!.env.example
+
+# Reconstructed from the exact @yowasp/clang version in bun.lockb.
+public/toolchain/v1/bundle.js
+public/toolchain/v1/llvm-resources.tar
+public/toolchain/v1/*.wasm

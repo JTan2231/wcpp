@@ -1,0 +1,27 @@
+{
+  "name": "browser-cpp-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.1.42",
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "serve": "bun run scripts/serve.ts",
+    "start": "bun run build && bun run serve",
+    "test": "bun run test:acceptance",
+    "test:acceptance": "bun run build && playwright test",
+    "test:chrome": "bun run build && playwright test --project=chrome"
+  },
+  "dependencies": {
+    "@yowasp/clang": "22.0.0-git20542-10",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@types/bun": "^1.1.14",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@yowasp/runtime": "11.0.67",
+    "typescript": "^5.9.2"
+  }
+}

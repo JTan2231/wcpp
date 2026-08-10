@@ -1,0 +1,47 @@
+{
+  "id": "yowasp-clang-22.0.0-git20542-10",
+  "package": "@yowasp/clang@22.0.0-git20542-10",
+  "archive": {
+    "url": "https://registry.npmjs.org/@yowasp/clang/-/clang-22.0.0-git20542-10.tgz",
+    "bytes": 27112311,
+    "sha256": "6230ea1afa9691fa065935cf68c01642ff9b31c183fe8ac64cdfda025df06009",
+    "integrity": "sha512-V31/z9GrJECKeACTDUyvg2llbEUiFi3bxtL5HSg7H/6sydSxdI/AoVAD9F5ozrfLjotWl0B9rghR87m+DUM/zg=="
+  },
+  "compilerVersion": "22.1.0",
+  "runtimePackage": "@yowasp/runtime@11.0.67",
+  "target": "wasm32-unknown-wasip1",
+  "languageStandard": "c++20",
+  "exceptions": false,
+  "threads": false,
+  "source": "https://codeberg.org/YoWASP/clang",
+  "sourceRevision": "409b7dfdbd5ed12545eed706808fd423f1f692c6",
+  "llvmRevision": "9560ae0f2cc440e4fc891fddbc119da6f56daa59",
+  "wasiLibcRevision": "2fc32bc81b9f07f8d9525edea59bfbaf760c06d6",
+  "wasiSdkVersion": 29,
+  "artifacts": {
+    "bundle.js": {
+      "bytes": 253926,
+      "sha256": "c7ce70fb627eedc9bd6159928743da85eac7b4729aa2e776ae3771ae76c91dd6"
+    },
+    "llvm-resources.tar": {
+      "bytes": 29665280,
+      "sha256": "79eef0c336fe55cf03ff8f5b42b784c8168f929a3603138b2c6301f4601e4c86"
+    },
+    "llvm.core.wasm": {
+      "bytes": 75532134,
+      "sha256": "24fbed474c7b5b4968fd73fc4827440b93fb351c1b6264516130300eff3e7bf5"
+    },
+    "llvm.core2.wasm": {
+      "bytes": 37626,
+      "sha256": "960c326eb9b5db7aedbc169540421587a2d3f3ff987e93d6ad5b4da43430ffd4"
+    },
+    "llvm.core3.wasm": {
+      "bytes": 5458,
+      "sha256": "63680c043192abac4700bbda6a78e4c19b139fa086b1e872d1c6915d37a428a8"
+    },
+    "llvm.core4.wasm": {
+      "bytes": 787,
+      "sha256": "f544dc9cc46f88a0f22d1b839a4fb0853dce2d6e231d880bd19754c59a5a234d"
+    }
+  }
+}
