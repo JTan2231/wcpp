@@ -5,7 +5,7 @@ function status(page: Page) {
 }
 
 function stdout(page: Page) {
-  return page.getByRole("region", { name: "Program stdout" }).locator("pre");
+  return page.locator('[data-output="stdout"]');
 }
 
 async function run(page: Page, source: string, expectedStatus: string | RegExp) {
@@ -55,7 +55,7 @@ int main() {
 
   await run(page, "int main() { return missing_name; }\n", /missing_name/);
   await expect(
-    page.getByRole("region", { name: "Compiler diagnostics" }).locator("li").first(),
+    page.locator('[data-output="compiler"] li').first(),
   ).toContainText("main.cpp:1:21");
 
   await run(

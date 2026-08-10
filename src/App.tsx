@@ -25,6 +25,10 @@ interface AppProps {
   compilerClient?: CompilerClient;
 }
 
+type OutputView = "compiler" | "stdout" | "stderr";
+
+const OUTPUT_VIEWS: OutputView[] = ["compiler", "stdout", "stderr"];
+
 function makeRequestId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 }
@@ -46,6 +50,7 @@ export default function App({ compilerClient }: AppProps) {
   const [diagnostics, setDiagnostics] = useState<CompilerDiagnostic[]>([]);
   const [stdout, setStdout] = useState("");
   const [stderr, setStderr] = useState("");
+  const [outputView, setOutputView] = useState<OutputView>("compiler");
   const activeRequestId = useRef<string | null>(null);
   const activeCompilerClient = useRef<CompilerClient | null>(null);
 
@@ -72,6 +77,7 @@ export default function App({ compilerClient }: AppProps) {
       switch (event.type) {
         case "phase":
           setPhase(event.phase);
+          if (event.phase === "running") setOutputView("stdout");
           setStatus(
             event.message ??
               (event.phase === "compiling" ? "Compiling…" : "Running…"),
@@ -136,6 +142,7 @@ export default function App({ compilerClient }: AppProps) {
     setDiagnostics([]);
     setStdout("");
     setStderr("");
+    setOutputView("compiler");
 
     try {
       compilerClient.compileAndRun({
@@ -162,71 +169,94 @@ export default function App({ compilerClient }: AppProps) {
 
   return (
     <main className="workspace">
-      <header className="toolbar">
-        <div>
-          <h1>wcpp</h1>
-          <p>Compile and run main.cpp entirely in your browser.</p>
-        </div>
+      <div className="controls">
+        <span className="status" role="status">
+          {status}
+        </span>
         <button
-          className={isActive ? "button button--cancel" : "button"}
+          className="button"
           type="button"
           onClick={isActive ? cancel : compileAndRun}
           disabled={!isActive && source.trim().length === 0}
         >
           {isActive ? "Cancel" : "Compile & Run"}
         </button>
-      </header>
+      </div>
 
-      <section className="editor-panel" aria-labelledby="editor-label">
-        <div className="panel-heading">
-          <label id="editor-label" htmlFor="source-editor">
-            main.cpp
-          </label>
-          <span className={`status status--${phase}`} role="status">
-            {status}
-          </span>
+      <textarea
+        id="source-editor"
+        className="source-editor"
+        value={source}
+        onChange={(event) => setSource(event.target.value)}
+        spellCheck={false}
+        aria-label="main.cpp source code"
+      />
+
+      <div className="output">
+        <div className="output-tabs" role="tablist" aria-label="Output">
+          {OUTPUT_VIEWS.map((view) => (
+            <button
+              id={`output-tab-${view}`}
+              className="output-tab"
+              type="button"
+              role="tab"
+              aria-controls={`output-panel-${view}`}
+              aria-selected={outputView === view}
+              key={view}
+              onClick={() => setOutputView(view)}
+            >
+              {view}
+            </button>
+          ))}
         </div>
-        <textarea
-          id="source-editor"
-          className="source-editor"
-          value={source}
-          onChange={(event) => setSource(event.target.value)}
-          spellCheck={false}
-          aria-label="main.cpp source code"
-        />
-      </section>
 
-      <section className="diagnostics panel" aria-labelledby="diagnostics-title">
-        <h2 id="diagnostics-title">Compiler diagnostics</h2>
-        {diagnostics.length === 0 ? (
-          <p className="empty-output">No diagnostics.</p>
-        ) : (
-          <ul>
-            {diagnostics.map((diagnostic, index) => {
-              const location = diagnosticLocation(diagnostic);
-              return (
-                <li key={`${location}-${index}`}>
-                  <span className={`severity severity--${diagnostic.severity}`}>
-                    {diagnostic.severity}
-                  </span>
-                  {location && <code>{location}</code>}
-                  <span>{diagnostic.message}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <div className="output-grid">
-        <section className="panel" aria-labelledby="stdout-title">
-          <h2 id="stdout-title">Program stdout</h2>
-          <pre>{stdout || "No output."}</pre>
-        </section>
-        <section className="panel" aria-labelledby="stderr-title">
-          <h2 id="stderr-title">Program stderr</h2>
-          <pre className="stderr">{stderr || "No output."}</pre>
-        </section>
+        <div className="output-viewport">
+          <div
+            id="output-panel-compiler"
+            className="output-pane diagnostics"
+            role="tabpanel"
+            aria-labelledby="output-tab-compiler"
+            data-output="compiler"
+            hidden={outputView !== "compiler"}
+          >
+            {diagnostics.length === 0 ? (
+              <p>No diagnostics.</p>
+            ) : (
+              <ul>
+                {diagnostics.map((diagnostic, index) => {
+                  const location = diagnosticLocation(diagnostic);
+                  return (
+                    <li key={`${location}-${index}`}>
+                      <span className="severity">{diagnostic.severity}</span>
+                      {location && <code>{location}</code>}
+                      <span>{diagnostic.message}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          <pre
+            id="output-panel-stdout"
+            className="output-pane"
+            role="tabpanel"
+            aria-labelledby="output-tab-stdout"
+            data-output="stdout"
+            hidden={outputView !== "stdout"}
+          >
+            {stdout || "No output."}
+          </pre>
+          <pre
+            id="output-panel-stderr"
+            className="output-pane"
+            role="tabpanel"
+            aria-labelledby="output-tab-stderr"
+            data-output="stderr"
+            hidden={outputView !== "stderr"}
+          >
+            {stderr || "No output."}
+          </pre>
+        </div>
       </div>
     </main>
   );

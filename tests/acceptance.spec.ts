@@ -53,11 +53,12 @@ function status(page: Page) {
 }
 
 function output(page: Page, name: "Program stdout" | "Program stderr") {
-  return page.getByRole("region", { name }).locator("pre");
+  const stream = name === "Program stdout" ? "stdout" : "stderr";
+  return page.locator(`[data-output="${stream}"]`);
 }
 
 function diagnostics(page: Page) {
-  return page.getByRole("region", { name: "Compiler diagnostics" });
+  return page.locator('[data-output="compiler"]');
 }
 
 async function runSource(
@@ -78,6 +79,48 @@ async function openApp(page: Page): Promise<BrowserGuard> {
   await expect(status(page)).toHaveText("Ready");
   return guard;
 }
+
+test("uses one monochrome Courier output viewport without headings", async ({
+  page,
+}) => {
+  const guard = await openApp(page);
+
+  await expect(page.locator("h1, h2, h3, h4, h5, h6")).toHaveCount(0);
+  await expect(page.getByRole("tablist", { name: "Output" })).toBeVisible();
+
+  const styles = await page.evaluate(() => {
+    const body = getComputedStyle(document.body);
+    const editor = getComputedStyle(document.querySelector("textarea")!);
+    return {
+      bodyColor: body.color,
+      bodyBackground: body.backgroundColor,
+      bodyFont: body.fontFamily,
+      editorColor: editor.color,
+      editorBackground: editor.backgroundColor,
+      editorFont: editor.fontFamily,
+    };
+  });
+  expect(styles).toEqual({
+    bodyColor: "rgb(0, 0, 0)",
+    bodyBackground: "rgb(255, 255, 255)",
+    bodyFont: expect.stringContaining("Courier New"),
+    editorColor: "rgb(0, 0, 0)",
+    editorBackground: "rgb(255, 255, 255)",
+    editorFont: expect.stringContaining("Courier New"),
+  });
+
+  const paneBounds = [];
+  for (const view of ["compiler", "stdout", "stderr"] as const) {
+    await page.getByRole("tab", { name: view }).click();
+    await expect(page.getByRole("tabpanel")).toHaveCount(1);
+    const bounds = await page.locator(`[data-output="${view}"]`).boundingBox();
+    expect(bounds).not.toBeNull();
+    paneBounds.push(bounds);
+  }
+  expect(paneBounds[1]).toEqual(paneBounds[0]);
+  expect(paneBounds[2]).toEqual(paneBounds[0]);
+  guard.assertClean();
+});
 
 test("cout, clean diagnostics, and normal exit", async ({ page }) => {
   const guard = await openApp(page);
@@ -212,13 +255,13 @@ int main() {
 
   await expect(output(page, "Program stdout")).toHaveText("loop-started\n");
   await expect(status(page)).toHaveText("Running…");
-  const heading = await Promise.race([
-    page.evaluate(() => document.querySelector("h1")?.textContent),
+  const action = await Promise.race([
+    page.evaluate(() => document.querySelector("button.button")?.textContent),
     new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error("The browser main thread did not respond within 500 ms")), 500);
     }),
   ]);
-  expect(heading).toBe("wcpp");
+  expect(action).toBe("Cancel");
   await expect(status(page)).toHaveText("Running…");
   await expect(status(page)).toHaveText("Execution timed out after 2 seconds", {
     timeout: 4_000,
