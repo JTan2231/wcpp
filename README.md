@@ -1,6 +1,6 @@
-# Browser C++ Workspace
+# wcpp
 
-A minimal, backend-free C++20 workspace built with Bun, TypeScript, and React.
+`wcpp` is a minimal, backend-free C++20 workspace built with Bun, TypeScript, and React.
 Clang, LLD, and the compiled program all run inside browser Web Workers. The
 production output in `dist/` is a static site.
 

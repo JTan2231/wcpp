@@ -218,7 +218,7 @@ int main() {
       setTimeout(() => reject(new Error("The browser main thread did not respond within 500 ms")), 500);
     }),
   ]);
-  expect(heading).toBe("C++ Workspace");
+  expect(heading).toBe("wcpp");
   await expect(status(page)).toHaveText("Running…");
   await expect(status(page)).toHaveText("Execution timed out after 2 seconds", {
     timeout: 4_000,

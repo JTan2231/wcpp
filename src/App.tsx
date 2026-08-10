@@ -164,7 +164,7 @@ export default function App({ compilerClient }: AppProps) {
     <main className="workspace">
       <header className="toolbar">
         <div>
-          <h1>C++ Workspace</h1>
+          <h1>wcpp</h1>
           <p>Compile and run main.cpp entirely in your browser.</p>
         </div>
         <button
