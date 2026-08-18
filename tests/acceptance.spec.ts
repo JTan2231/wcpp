@@ -25,6 +25,8 @@ function installBrowserGuard(page: Page): BrowserGuard {
     const url = new URL(request.url());
     if (url.origin !== "http://127.0.0.1:4173") {
       failures.push(`external request: ${request.method()} ${request.url()}`);
+    } else if (!url.pathname.startsWith("/wcpp/")) {
+      failures.push(`request escaped /wcpp/: ${request.method()} ${request.url()}`);
     }
     if (!['GET', 'HEAD'].includes(request.method())) {
       failures.push(`unexpected request method: ${request.method()} ${request.url()}`);
@@ -75,7 +77,7 @@ async function runSource(
 
 async function openApp(page: Page): Promise<BrowserGuard> {
   const guard = installBrowserGuard(page);
-  await page.goto("/");
+  await page.goto("./");
   await expect(status(page)).toHaveText("Ready");
   return guard;
 }
@@ -346,12 +348,12 @@ test("reuses the warm compiler for twenty consecutive builds", async ({ page }) 
   const guard = installBrowserGuard(page);
   let toolchainRequests = 0;
   page.on("request", (request) => {
-    if (new URL(request.url()).pathname.startsWith("/toolchain/v1/")) {
+    if (new URL(request.url()).pathname.startsWith("/wcpp/toolchain/v1/")) {
       toolchainRequests += 1;
     }
   });
 
-  await page.goto("/");
+  await page.goto("./");
   await expect(status(page)).toHaveText("Ready");
 
   await runSource(page, HELLO_SOURCE, "Exited with code 0");
@@ -404,7 +406,7 @@ test("passes three true Chrome cold starts with same-origin static assets", asyn
 
         page.on("response", (response) => {
           const url = new URL(response.url());
-          if (!url.pathname.startsWith("/toolchain/v1/")) return;
+          if (!url.pathname.startsWith("/wcpp/toolchain/v1/")) return;
 
           const asset = url.pathname.split("/").at(-1) ?? "";
           assetCounts.set(asset, (assetCounts.get(asset) ?? 0) + 1);
@@ -417,7 +419,7 @@ test("passes three true Chrome cold starts with same-origin static assets", asyn
         });
 
         const started = performance.now();
-        await page.goto(`http://127.0.0.1:4173/?cold=${iteration}`);
+        await page.goto(`http://127.0.0.1:4173/wcpp/?cold=${iteration}`);
         await expect(status(page)).toHaveText("Ready");
         await runSource(page, HELLO_SOURCE, "Exited with code 0", 60_000);
         expect(performance.now() - started).toBeLessThan(60_000);

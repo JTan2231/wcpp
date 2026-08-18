@@ -2,6 +2,7 @@ import { extname, join, normalize } from "node:path";
 
 const port = Number(process.env.PORT ?? 4173);
 const distRoot = normalize(new URL("../dist/", import.meta.url).pathname);
+const mountPath = "/wcpp";
 
 const mimeTypes: Record<string, string> = {
   ".br": "application/octet-stream",
@@ -18,7 +19,15 @@ const server = Bun.serve({
   port,
   async fetch(request) {
     const url = new URL(request.url);
-    const requested = decodeURIComponent(url.pathname === "/" ? "/index.html" : url.pathname);
+    if (url.pathname === mountPath) {
+      return Response.redirect(`${url.origin}${mountPath}/${url.search}`, 308);
+    }
+    if (!url.pathname.startsWith(`${mountPath}/`)) {
+      return new Response("Not found", { status: 404 });
+    }
+
+    const mountedPath = url.pathname.slice(mountPath.length);
+    const requested = decodeURIComponent(mountedPath === "/" ? "/index.html" : mountedPath);
     const candidate = normalize(join(distRoot, requested));
 
     if (!candidate.startsWith(distRoot)) {
@@ -40,4 +49,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`Static site available at ${server.url}`);
+console.log(`Static site available at ${new URL(`${mountPath}/`, server.url)}`);

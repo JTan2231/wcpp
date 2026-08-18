@@ -11,7 +11,7 @@ bun install --frozen-lockfile
 bun start
 ```
 
-Then open <http://localhost:4173>.
+Then open <http://localhost:4173/wcpp/>.
 
 ## Verify
 
@@ -52,8 +52,13 @@ be stopped with `Worker.terminate()` without losing the warmed compiler.
 
 ## Static hosting
 
-Run `bun run build`, then deploy `dist/` to a static HTTPS host. The host must
-serve `.wasm` files as `application/wasm`. Enable Brotli compression: the
+The production site is <https://joeytan.dev/wcpp/>. Pushes to `main` deploy
+`dist/` through the GitHub Pages workflow; the workflow can also be run
+manually from GitHub Actions. The `wcpp` repository does not need its own
+`CNAME` because it inherits the custom domain from the account site.
+
+For another static HTTPS host, run `bun run build` and deploy `dist/`. The host
+must serve `.wasm` files as `application/wasm`. Enable Brotli compression: the
 toolchain is approximately 105 MB unpacked and about 20 MB with Brotli level 9.
 No COOP/COEP headers or backend execution service are required.
 

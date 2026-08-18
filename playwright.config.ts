@@ -10,7 +10,7 @@ export default defineConfig({
   },
   reporter: [["list"]],
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: "http://127.0.0.1:4173/wcpp/",
     headless: true,
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
@@ -34,7 +34,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "bun run serve",
-    url: "http://127.0.0.1:4173",
+    url: "http://127.0.0.1:4173/wcpp/",
     reuseExistingServer: true,
     timeout: 30_000,
   },

@@ -9,6 +9,7 @@ const toolchainPackageDir = new URL(
   "../node_modules/@yowasp/clang/gen/",
   import.meta.url,
 );
+const sourcemap = process.env.NODE_ENV === "production" ? "none" : "external";
 
 interface ToolchainManifest {
   artifacts: Record<string, { bytes: number; sha256: string }>;
@@ -46,7 +47,7 @@ const builds = await Promise.all([
     target: "browser",
     format: "esm",
     minify: true,
-    sourcemap: "external",
+    sourcemap,
     naming: {
       entry: "[name].[ext]",
       asset: "[name].[ext]",
@@ -57,9 +58,8 @@ const builds = await Promise.all([
     outdir: workersDir.pathname,
     target: "browser",
     format: "iife",
-    external: ["/toolchain/*"],
     minify: true,
-    sourcemap: "external",
+    sourcemap,
     naming: "[name].[ext]",
   }),
   Bun.build({
@@ -68,7 +68,7 @@ const builds = await Promise.all([
     target: "browser",
     format: "iife",
     minify: true,
-    sourcemap: "external",
+    sourcemap,
     naming: "[name].[ext]",
   }),
 ]);

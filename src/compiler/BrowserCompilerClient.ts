@@ -102,7 +102,9 @@ export class BrowserCompilerClient implements CompilerClient {
   }
 
   private createCompilerWorker(): Worker {
-    const worker = new Worker("/workers/compiler.worker.js");
+    const worker = new Worker(
+      new URL("../workers/compiler.worker.js", import.meta.url),
+    );
     worker.addEventListener("message", (event: MessageEvent<BuildWorkerEvent>) => {
       if (this.compilerWorker !== worker) return;
       this.onBuildEvent(event.data);
@@ -179,7 +181,9 @@ export class BrowserCompilerClient implements CompilerClient {
 
     let runner: Worker;
     try {
-      runner = new Worker("/workers/runner.worker.js");
+      runner = new Worker(
+        new URL("../workers/runner.worker.js", import.meta.url),
+      );
     } catch (error) {
       this.fail(
         requestId,

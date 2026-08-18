@@ -24,7 +24,10 @@ interface YoWaspClang {
 }
 
 const worker = self as unknown as DedicatedWorkerGlobalScope;
-const toolchainModuleUrl = "/toolchain/v1/bundle.js";
+const toolchainModuleUrl = new URL(
+  "../toolchain/v1/bundle.js",
+  worker.location.href,
+).href;
 
 let toolchainReady: Promise<YoWaspClang> | null = null;
 

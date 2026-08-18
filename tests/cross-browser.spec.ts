@@ -30,10 +30,12 @@ test("cold-loads Clang, runs C++20, reports errors, and reruns", async ({ page }
     const url = new URL(request.url());
     if (url.origin !== "http://127.0.0.1:4173") {
       failures.push(`external request: ${request.url()}`);
+    } else if (!url.pathname.startsWith("/wcpp/")) {
+      failures.push(`request escaped /wcpp/: ${request.url()}`);
     }
   });
 
-  await page.goto(`/?engine=${test.info().project.name}`);
+  await page.goto(`./?engine=${test.info().project.name}`);
   await expect(status(page)).toHaveText("Ready");
 
   await run(
