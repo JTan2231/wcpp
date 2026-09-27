@@ -43,6 +43,7 @@ Press `i` to type in **Insert** mode and `Esc` to return to Normal. Expand
 | `Ctrl+Up/Down` | Jump between blocks separated by blank lines, in either mode |
 | `Ctrl+w` | Delete back to the Ctrl+Left word boundary, or delete the selection, in either mode |
 | `Tab` | Insert 4 spaces, replacing any selection, in either mode |
+| `Enter` in Insert mode, `o` in Normal mode | Start a new line with the current line's indentation |
 | `Shift+Tab` | Move focus to the previous control |
 
 The operating system may reserve some Ctrl+arrow shortcuts. Mouse selection,

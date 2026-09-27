@@ -72,6 +72,60 @@ test("starts in Normal, supports i/a/o and groups each insertion for undo", asyn
   await expect(input).toHaveValue("    big cat");
 });
 
+for (const name of ["C++ source code", "Program input"]) {
+  test(`${name}: Enter and o keep indentation, cursor placement and undo history`, async ({ page }) => {
+    const input = page.getByRole("textbox", { name, exact: true });
+    const indentation = " ".repeat(12);
+    await fillEditor(input, "");
+    await keys(input, ["i", "Tab", "Tab", "Tab"]);
+    await input.pressSequentially("first");
+    await input.press("Enter");
+    await expect(input).toHaveValue(`${indentation}first\n${indentation}`);
+    await cursorAt(input, indentation.length * 2 + "first\n".length);
+    await input.pressSequentially("second");
+    await keys(input, ["Enter", "Enter"]);
+    const before = `${indentation}first\n${indentation}second\n${indentation}\n${indentation}`;
+    await expect(input).toHaveValue(before);
+    await cursorAt(input, before.length);
+    await keys(input, ["Escape", "u"]);
+    await expect(input).toHaveValue("");
+    await input.press("Control+r");
+    await expect(input).toHaveValue(before);
+
+    await keys(input, ["g", "g", "o"]);
+    await expect(input).toHaveValue(`${indentation}first\n${indentation}\n${indentation}second\n${indentation}\n${indentation}`);
+    await cursorAt(input, indentation.length * 2 + "first\n".length);
+    await input.pressSequentially("between");
+    const after = `${indentation}first\n${indentation}between\n${indentation}second\n${indentation}\n${indentation}`;
+    await keys(input, ["Escape", "u"]);
+    await expect(input).toHaveValue(before);
+    await input.press("Control+r");
+    await expect(input).toHaveValue(after);
+  });
+}
+
+test("Enter preserves mixed indentation and handles line splits and selections", async ({ page }) => {
+  const input = page.getByRole("textbox", { name: "Program input" });
+  for (const example of [
+    { before: "plain", start: 5, end: 5, after: "plain\n", cursor: 6 },
+    { before: "\t  \tfirst\nnext", start: 9, end: 9, after: "\t  \tfirst\n\t  \t\nnext", cursor: 14 },
+    { before: "    one two", start: 8, end: 8, after: "    one \n    two", cursor: 13 },
+    { before: "    one", start: 2, end: 2, after: "  \n    one", cursor: 5 },
+    { before: "    one two\n  three", start: 8, end: 14, after: "    one \n    three", cursor: 13 },
+  ]) {
+    await fillEditor(input, example.before);
+    await input.press("i");
+    await input.evaluate((element: HTMLTextAreaElement, { start, end }) => {
+      element.setSelectionRange(start, end);
+    }, example);
+    await input.press("Enter");
+    await expect(input).toHaveValue(example.after);
+    await cursorAt(input, example.cursor);
+    await keys(input, ["Escape", "u"]);
+    await expect(input).toHaveValue(example.before);
+  }
+});
+
 test("moves by characters, words, lines and document boundaries", async ({ page }) => {
   const input = page.getByRole("textbox", { name: "C++ source code" });
   await fillEditor(input, "alpha beta\nx\n  final");

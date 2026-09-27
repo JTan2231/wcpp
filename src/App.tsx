@@ -219,6 +219,7 @@ export default function App({ compilerClient }: AppProps) {
         <div className="editor-shortcuts">
           <span><kbd>Ctrl+'</kbd> run / cancel · <kbd>Esc</kbd> return to Normal</span>
           <span><kbd>i</kbd> insert before · <kbd>a</kbd> after · <kbd>o</kbd> new line below</span>
+          <span><kbd>Enter</kbd> in Insert mode / <kbd>o</kbd> in Normal mode keep the current line's indentation</span>
           <span><kbd>h j k l</kbd> / arrows move · <kbd>w b</kbd> move by word</span>
           <span><kbd>0 $</kbd> line start / end · <kbd>gg G</kbd> first / last line</span>
           <span><kbd>x</kbd> delete character · <kbd>dd</kbd> delete line · <kbd>yy</kbd> copy line · <kbd>p</kbd> paste</span>

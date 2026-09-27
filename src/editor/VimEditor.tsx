@@ -105,6 +105,15 @@ export default function VimEditor({
     replace(nextText, position);
   };
 
+  const insertNewline = (start: number, end = start) => {
+    insertStart.current ??= snapshot();
+    const current = text.current;
+    const line = lineAt(current, start);
+    const indentation = current.slice(line.start, start).match(/^[ \t]*/u)![0];
+    const inserted = "\n" + indentation;
+    replace(current.slice(0, start) + inserted + current.slice(end), start + inserted.length, "insert");
+  };
+
   const travelHistory = (backward: boolean) => {
     finishInsert();
     const from = backward ? undo.current : redo.current;
@@ -224,6 +233,10 @@ export default function VimEditor({
     }
 
     if (mode === "insert") {
+      if (key === "Enter") {
+        event.preventDefault();
+        insertNewline(position, input.selectionEnd);
+      }
       if (/^(Arrow|Home|End|Page)/.test(key)) finishInsert();
       return;
     }
@@ -259,7 +272,7 @@ export default function VimEditor({
       insertStart.current = snapshot();
       setMode("insert");
       if (key === "o") {
-        replace(current.slice(0, line.end) + "\n" + current.slice(line.end), line.end + 1, "insert");
+        insertNewline(line.end);
       } else {
         const at = key === "a" && position < line.end ? nextCharacter(current, position) : position;
         insertStart.current.cursor = at;
