@@ -199,7 +199,7 @@ test("unfinished commands cancel on Escape, other commands and focus changes", a
   const source = page.getByRole("textbox", { name: "C++ source code" });
   const input = page.getByRole("textbox", { name: "Program input" });
   await fillEditor(source, "one\ntwo");
-  await keys(source, ["g", "g", "d", "Escape", "d", "j"]);
+  await keys(source, ["g", "g", "d", "Escape", "d", "h", "j"]);
   await expect(source).toHaveValue("one\ntwo");
   await cursorAt(source, 4);
   await source.press("g");
@@ -227,6 +227,71 @@ for (const example of [
     await expect(input).toHaveValue(example.before);
   });
 }
+
+for (const motion of ["ArrowUp", "ArrowDown", "k", "j"]) {
+  test(`d then ${motion} deletes both whole lines with undo, redo and shared paste`, async ({ page }) => {
+    const source = page.getByRole("textbox", { name: "C++ source code" });
+    const input = page.getByRole("textbox", { name: "Program input" });
+    const before = "one\n  two\nthree\n  four";
+    await fillEditor(source, before);
+    await keys(source, ["g", "g", "j"]);
+    if (motion === "ArrowUp" || motion === "k") await source.press("j");
+    await source.press("$");
+    const originalCursor = await source.evaluate((element: HTMLTextAreaElement) => element.selectionStart);
+
+    await keys(source, ["d", motion]);
+    await expect(source).toHaveValue("one\n  four");
+    await cursorAt(source, 6);
+    await expect(source).toHaveAttribute("readonly", "");
+    await source.press("u");
+    await expect(source).toHaveValue(before);
+    await cursorAt(source, originalCursor);
+    await source.press("Control+r");
+    await expect(source).toHaveValue("one\n  four");
+    await cursorAt(source, 6);
+    await input.press("p");
+    await expect(input).toHaveValue("  two\nthree");
+    await cursorAt(input, 2);
+  });
+}
+
+for (const example of [
+  { name: "first two lines", before: "one\ntwo\nthree", movement: ["g", "g"], motion: "ArrowDown", after: "three", cursor: 0 },
+  { name: "last two lines", before: "one\ntwo\nthree", movement: ["G"], motion: "ArrowUp", after: "one", cursor: 0 },
+  { name: "lines before a trailing newline", before: "one\ntwo\nthree\n", movement: ["g", "g", "j"], motion: "ArrowDown", after: "one\n", cursor: 4 },
+  { name: "trailing empty line and its predecessor", before: "one\ntwo\nthree\n", movement: ["G"], motion: "ArrowUp", after: "one\ntwo", cursor: 4 },
+  { name: "blank neighboring line", before: "one\n\nthree", movement: ["g", "g"], motion: "ArrowDown", after: "three", cursor: 0 },
+  { name: "entire two-line document", before: "one\ntwo", movement: ["g", "g"], motion: "ArrowDown", after: "", cursor: 0 },
+]) {
+  test(`directional deletion handles the ${example.name}`, async ({ page }) => {
+    const input = page.getByRole("textbox", { name: "Program input" });
+    await fillEditor(input, example.before);
+    await keys(input, [...example.movement, "d", example.motion]);
+    await expect(input).toHaveValue(example.after);
+    await cursorAt(input, example.cursor);
+    await input.press("u");
+    await expect(input).toHaveValue(example.before);
+  });
+}
+
+test("directional deletion at document boundaries preserves text, register and history", async ({ page }) => {
+  const input = page.getByRole("textbox", { name: "Program input" });
+  await fillEditor(input, "one\ntwo");
+  await keys(input, ["g", "g", "y", "y", "d", "ArrowUp", "d", "k"]);
+  await expect(input).toHaveValue("one\ntwo");
+  await cursorAt(input, 0);
+  await keys(input, ["G", "d", "ArrowDown", "d", "j"]);
+  await expect(input).toHaveValue("one\ntwo");
+  await cursorAt(input, 4);
+  await input.press("p");
+  await expect(input).toHaveValue("one\ntwo\none");
+  await keys(input, ["u", "u"]);
+  await expect(input).toHaveValue("");
+  await keys(input, ["d", "ArrowUp", "d", "ArrowDown", "p"]);
+  await expect(input).toHaveValue("one");
+  await keys(input, ["d", "ArrowUp", "d", "ArrowDown"]);
+  await expect(input).toHaveValue("one");
+});
 
 test("yy/p preserve whole lines and share yanks across independent editors", async ({ page }) => {
   const source = page.getByRole("textbox", { name: "C++ source code" });

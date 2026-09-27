@@ -37,6 +37,7 @@ Press `i` to type in **Insert** mode and `Esc` to return to Normal. Expand
 | `0`, `$` | Move to the start/end of the line |
 | `gg`, `G` | Move to the first/last line |
 | `x`, `dd` | Delete a character or a whole line |
+| `d` then `↑` / `↓` (`dk` / `dj`) | Delete the current line and the previous / next line |
 | `yy`, `p` | Copy a line, then paste it below the current line |
 | `u`, `Ctrl+r` | Undo/redo |
 | `Ctrl+Left/Right` | Move by word, in either mode |
@@ -48,14 +49,15 @@ Press `i` to type in **Insert** mode and `Esc` to return to Normal. Expand
 
 The operating system may reserve some Ctrl+arrow shortcuts. Mouse selection,
 clipboard shortcuts, and Shift+Tab navigation remain available. Each editor keeps its
-own cursor, mode, and undo history; `yy`, `dd`, and `x` use a shared register so
+own cursor, mode, and undo history; `yy`, line deletions, and `x` use a shared register so
 `p` can paste between the two editors. This register is separate from the system
 clipboard. A completed Insert session or a Normal-mode edit is one undo step;
 Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z also undo and redo. History is limited to 100 undo
 steps per editor and lasts for the current page session.
+Deleting with an upward/downward motion does nothing when there is no line in that direction.
 
 This is a small custom Vim-like editor. Counts, Visual mode, macros, colon
-commands, and operator/motion combinations such as `dw` are not implemented.
+commands, and other operator/motion combinations such as `dw` are not implemented.
 
 ## Verify
 

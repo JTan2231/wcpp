@@ -257,13 +257,21 @@ export default function VimEditor({
       placeCursor(firstNonblank(current, 0));
     } else if (pending === "y" && key === "y") {
       register.current = { text: current.slice(line.start, line.end), linewise: true };
-    } else if (pending === "d" && key === "d") {
-      register.current = { text: current.slice(line.start, line.end), linewise: true };
-      if (line.end < current.length) {
-        const next = current.slice(0, line.start) + current.slice(line.end + 1);
-        edit(next, firstNonblank(next, line.start));
+    } else if (pending === "d" && (key === "d" || key === "ArrowUp" || key === "ArrowDown" || key === "k" || key === "j")) {
+      let { start, end } = line;
+      if (key === "ArrowUp" || key === "k") {
+        if (start === 0) return;
+        start = lineAt(current, start - 1).start;
+      } else if (key === "ArrowDown" || key === "j") {
+        if (end === current.length) return;
+        end = lineAt(current, end + 1).end;
+      }
+      register.current = { text: current.slice(start, end), linewise: true };
+      if (end < current.length) {
+        const next = current.slice(0, start) + current.slice(end + 1);
+        edit(next, firstNonblank(next, start));
       } else {
-        const next = current.slice(0, Math.max(0, line.start - 1));
+        const next = current.slice(0, Math.max(0, start - 1));
         edit(next, firstNonblank(next, next.length));
       }
     } else if (key === "g" || key === "d" || key === "y") {
