@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import VimEditor, { type Yank } from "./editor/VimEditor";
+
 import type {
   CompilerClient,
   CompilerDiagnostic,
@@ -44,6 +46,7 @@ function diagnosticLocation(diagnostic: CompilerDiagnostic): string {
 export default function App({ compilerClient }: AppProps) {
   const [source, setSource] = useState(DEFAULT_SOURCE);
   const [stdin, setStdin] = useState("");
+  const yankRegister = useRef<Yank | null>(null);
   const [phase, setPhase] = useState<CompilerPhase>("idle");
   const [status, setStatus] = useState(
     compilerClient ? "Ready" : "Compiler client is not connected",
@@ -186,32 +189,38 @@ export default function App({ compilerClient }: AppProps) {
       </div>
 
       <div className="editors">
-        <div className="editor-field">
-          <label htmlFor="source-editor">main.cpp</label>
-          <textarea
-            id="source-editor"
-            className="source-editor"
-            value={source}
-            onChange={(event) => setSource(event.target.value)}
-            spellCheck={false}
-            aria-label="main.cpp source code"
-          />
-        </div>
-        <div className="editor-field">
-          <label htmlFor="stdin-editor">test.txt (stdin)</label>
-          <textarea
-            id="stdin-editor"
-            className="stdin-editor"
-            value={stdin}
-            onChange={(event) => setStdin(event.target.value)}
-            spellCheck={false}
-            autoCapitalize="off"
-            autoCorrect="off"
-            aria-label="test.txt stdin"
-            placeholder="Enter input for your program here."
-          />
-        </div>
+        <VimEditor
+          id="source-editor"
+          label="main.cpp"
+          ariaLabel="main.cpp source code"
+          className="source-editor"
+          value={source}
+          onChange={setSource}
+          register={yankRegister}
+        />
+        <VimEditor
+          id="stdin-editor"
+          label="test.txt (stdin)"
+          ariaLabel="test.txt stdin"
+          className="stdin-editor"
+          value={stdin}
+          onChange={setStdin}
+          register={yankRegister}
+          placeholder="Press i to enter input for your program."
+        />
       </div>
+
+      <details className="editor-help">
+        <summary id="editor-shortcuts">i to type · Esc for Normal · Keyboard shortcuts</summary>
+        <div className="editor-shortcuts">
+          <span><kbd>i</kbd> insert before · <kbd>a</kbd> after · <kbd>o</kbd> new line below</span>
+          <span><kbd>h j k l</kbd> / arrows move · <kbd>w b</kbd> move by word</span>
+          <span><kbd>0 $</kbd> line start / end · <kbd>gg G</kbd> first / last line</span>
+          <span><kbd>x</kbd> delete character · <kbd>dd</kbd> delete line · <kbd>yy</kbd> copy line · <kbd>p</kbd> paste</span>
+          <span><kbd>u</kbd> undo · <kbd>Ctrl+r</kbd> redo · Cmd/Ctrl+Z also undoes</span>
+          <span>Ctrl+←/→ words · Ctrl+↑/↓ blocks separated by blank lines, when available to the browser</span>
+        </div>
+      </details>
 
       <div className="output">
         <div className="output-tabs" role="tablist" aria-label="Output">

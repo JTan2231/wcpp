@@ -20,6 +20,37 @@ as UTF-8 text, followed by EOF. Empty input gives immediate EOF. Each click uses
 the current source and input, and the output appears in the stdout/stderr tabs.
 The browser workspace uses the C++20 toolchain described below.
 
+## Text editing
+
+Both editors start in **Normal** mode, with a block cursor in the focused editor.
+Press `i` to type in **Insert** mode and `Esc` to return to Normal. The mode is
+shown beside each filename; expand **Keyboard shortcuts** below the editors for
+a quick reference.
+
+| Keys | Behavior |
+| --- | --- |
+| `i`, `a`, `o` | Insert before the cursor, after it, or on a new line below |
+| `h j k l`, arrow keys | Move left, down, up, right |
+| `w`, `b` | Move forward/backward by word |
+| `0`, `$` | Move to the start/end of the line |
+| `gg`, `G` | Move to the first/last line |
+| `x`, `dd` | Delete a character or a whole line |
+| `yy`, `p` | Copy a line, then paste it below the current line |
+| `u`, `Ctrl+r` | Undo/redo |
+| `Ctrl+Left/Right` | Move by word, in either mode |
+| `Ctrl+Up/Down` | Jump between blocks separated by blank lines, in either mode |
+
+The operating system may reserve some Ctrl+arrow shortcuts. Mouse selection,
+clipboard shortcuts, and Tab navigation remain available. Each editor keeps its
+own cursor, mode, and undo history; `yy`, `dd`, and `x` use a shared register so
+`p` can paste between the two editors. This register is separate from the system
+clipboard. A completed Insert session or a Normal-mode edit is one undo step;
+Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z also undo and redo. History is limited to 100 undo
+steps per editor and lasts for the current page session.
+
+This is a small custom Vim-like editor. Counts, Visual mode, macros, colon
+commands, and operator/motion combinations such as `dw` are not implemented.
+
 ## Verify
 
 ```sh
@@ -30,6 +61,11 @@ The acceptance suite uses real Chrome for the full behavior and safety matrix,
 plus Firefox and WebKit smoke coverage. It verifies compiler diagnostics,
 standard-library programs, stdout/stderr isolation, exit codes, traps, timeout
 and output limits, warm compiler reuse, and cold browser starts.
+Editor behavior is covered in Chrome, Firefox, and WebKit. To run only those checks:
+
+```sh
+bun run test:editor
+```
 
 ## Architecture
 

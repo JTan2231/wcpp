@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { fillEditor } from "./editor-helpers";
 
 function status(page: Page) {
   return page.getByRole("status");
@@ -9,8 +10,8 @@ function stdout(page: Page) {
 }
 
 async function run(page: Page, source: string, expectedStatus: string | RegExp, input = "") {
-  await page.getByRole("textbox", { name: "main.cpp source code" }).fill(source);
-  await page.getByRole("textbox", { name: "test.txt stdin" }).fill(input);
+  await fillEditor(page.getByRole("textbox", { name: "main.cpp source code" }), source);
+  await fillEditor(page.getByRole("textbox", { name: "test.txt stdin" }), input);
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText(expectedStatus, { timeout: 60_000 });
   await expect(page.getByRole("button", { name: "Run", exact: true })).toBeEnabled();

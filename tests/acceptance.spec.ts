@@ -1,4 +1,5 @@
 import { chromium, expect, test, type Page } from "@playwright/test";
+import { fillEditor } from "./editor-helpers";
 
 const HELLO_SOURCE = `#include <iostream>
 int main() {
@@ -73,7 +74,7 @@ async function runSource(
   expectedStatus: string | RegExp,
   timeout = 45_000,
 ): Promise<void> {
-  await editor(page).fill(source);
+  await fillEditor(editor(page), source);
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText(expectedStatus, { timeout });
   await expect(page.getByRole("button", { name: "Run", exact: true })).toBeEnabled();
@@ -140,7 +141,7 @@ test("cout, clean diagnostics, and normal exit", async ({ page }) => {
 
 test("reads multiple numbers from test.txt with cin", async ({ page }) => {
   const guard = await openApp(page);
-  await stdin(page).fill("12 -5\n\t35");
+  await fillEditor(stdin(page), "12 -5\n\t35");
   await runSource(
     page,
     `#include <iostream>
@@ -158,6 +159,24 @@ int main() {
   guard.assertClean();
 });
 
+test("Run uses the current source and stdin after Normal-mode edits", async ({ page }) => {
+  const guard = await openApp(page);
+  await fillEditor(editor(page), `#include <iostream>
+int main() {
+  int value;
+  std::cin >> value;
+  std::cout << value << '\\n';
+  return 7;
+}`);
+  for (const key of ["G", "k", "d", "d"]) await editor(page).press(key);
+  await fillEditor(stdin(page), "99\n41");
+  for (const key of ["g", "g", "d", "d"]) await stdin(page).press(key);
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(status(page)).toHaveText("Exited with code 0");
+  await expect(output(page, "Program stdout")).toHaveText("41\n");
+  guard.assertClean();
+});
+
 test("preserves stdin bytes through EOF and replaces input on each run", async ({ page }) => {
   const guard = await openApp(page);
   const source = `#include <iostream>
@@ -170,7 +189,7 @@ int main() {
 `;
 
   for (const input of ["  café\t世界\n\nlast line  ", "", "replacement\n"]) {
-    await stdin(page).fill(input);
+    await fillEditor(stdin(page), input);
     await runSource(page, source, "Exited with code 0");
     expect(await output(page, "Program stdout").textContent()).toBe(input || "No output.");
     expect(await output(page, "Program stderr").textContent()).toBe("EOF");
@@ -290,7 +309,7 @@ test("terminates an infinite loop without freezing the page", async ({ page }) =
       __executionTimingObserver: observer,
     });
   });
-  await editor(page).fill(`#include <iostream>
+  await fillEditor(editor(page), `#include <iostream>
 int main() {
   std::cout << "loop-started\\n" << std::flush;
   for (;;) {}

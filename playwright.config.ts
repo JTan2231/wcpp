@@ -18,17 +18,17 @@ export default defineConfig({
   projects: [
     {
       name: "chrome",
-      testMatch: /acceptance\.spec\.ts/,
+      testMatch: /(?:acceptance|editor)\.spec\.ts/,
       use: { browserName: "chromium", channel: "chrome" },
     },
     {
       name: "firefox",
-      testMatch: /cross-browser\.spec\.ts/,
+      testMatch: /(?:cross-browser|editor)\.spec\.ts/,
       use: { browserName: "firefox" },
     },
     {
       name: "webkit",
-      testMatch: /cross-browser\.spec\.ts/,
+      testMatch: /(?:cross-browser|editor)\.spec\.ts/,
       use: { browserName: "webkit" },
     },
   ],

@@ -19,7 +19,8 @@ body {
 
 button,
 textarea,
-code {
+code,
+kbd {
   font: inherit;
 }
 
@@ -70,6 +71,81 @@ code {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.editor-mode {
+  border: 1px solid #000;
+  padding: 1px 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+[data-mode="insert"] .editor-mode {
+  color: #fff;
+  background: #000;
+}
+
+.editor-surface {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.editor-cursor-viewport {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.editor-cursor-mirror {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content;
+  padding: 10px;
+  line-height: 1.45;
+  tab-size: 2;
+  white-space: pre;
+  visibility: hidden;
+}
+
+.editor-block-cursor[data-visible="true"] {
+  visibility: visible;
+  color: #fff;
+  background: #000;
+}
+
+[data-mode="normal"] textarea {
+  caret-color: transparent;
+}
+
+.editor-help {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.editor-help summary {
+  cursor: pointer;
+}
+
+.editor-shortcuts {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+kbd {
+  font-weight: bold;
 }
 
 .source-editor,

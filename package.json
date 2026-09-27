@@ -9,6 +9,7 @@
     "start": "bun run build && bun run serve",
     "test": "bun run test:acceptance",
     "test:acceptance": "bun run build && playwright test",
+    "test:editor": "bun run build && playwright test editor.spec.ts",
     "test:chrome": "bun run build && playwright test --project=chrome"
   },
   "dependencies": {
