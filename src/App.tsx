@@ -43,6 +43,7 @@ function diagnosticLocation(diagnostic: CompilerDiagnostic): string {
 
 export default function App({ compilerClient }: AppProps) {
   const [source, setSource] = useState(DEFAULT_SOURCE);
+  const [stdin, setStdin] = useState("");
   const [phase, setPhase] = useState<CompilerPhase>("idle");
   const [status, setStatus] = useState(
     compilerClient ? "Ready" : "Compiler client is not connected",
@@ -148,6 +149,7 @@ export default function App({ compilerClient }: AppProps) {
       compilerClient.compileAndRun({
         requestId,
         files: [{ path: "main.cpp", contents: source }],
+        stdin,
       });
     } catch (error) {
       activeRequestId.current = null;
@@ -179,18 +181,37 @@ export default function App({ compilerClient }: AppProps) {
           onClick={isActive ? cancel : compileAndRun}
           disabled={!isActive && source.trim().length === 0}
         >
-          {isActive ? "Cancel" : "Compile & Run"}
+          {isActive ? "Cancel" : "Run"}
         </button>
       </div>
 
-      <textarea
-        id="source-editor"
-        className="source-editor"
-        value={source}
-        onChange={(event) => setSource(event.target.value)}
-        spellCheck={false}
-        aria-label="main.cpp source code"
-      />
+      <div className="editors">
+        <div className="editor-field">
+          <label htmlFor="source-editor">main.cpp</label>
+          <textarea
+            id="source-editor"
+            className="source-editor"
+            value={source}
+            onChange={(event) => setSource(event.target.value)}
+            spellCheck={false}
+            aria-label="main.cpp source code"
+          />
+        </div>
+        <div className="editor-field">
+          <label htmlFor="stdin-editor">test.txt (stdin)</label>
+          <textarea
+            id="stdin-editor"
+            className="stdin-editor"
+            value={stdin}
+            onChange={(event) => setStdin(event.target.value)}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-label="test.txt stdin"
+            placeholder="Enter input for your program here."
+          />
+        </div>
+      </div>
 
       <div className="output">
         <div className="output-tabs" role="tablist" aria-label="Output">

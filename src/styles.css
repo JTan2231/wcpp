@@ -59,7 +59,22 @@ code {
   border-style: dashed;
 }
 
-.source-editor {
+.editors {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.source-editor,
+.stdin-editor {
+  flex: 1;
   display: block;
   width: 100%;
   min-height: 56vh;
@@ -74,6 +89,7 @@ code {
 }
 
 .source-editor:focus-visible,
+.stdin-editor:focus-visible,
 button:focus-visible {
   outline: 2px solid #000;
   outline-offset: 2px;
@@ -153,5 +169,13 @@ button:focus-visible {
   .controls {
     align-items: flex-start;
     flex-direction: column-reverse;
+  }
+
+  .editors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stdin-editor {
+    min-height: 160px;
   }
 }

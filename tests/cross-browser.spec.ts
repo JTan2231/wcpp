@@ -8,14 +8,15 @@ function stdout(page: Page) {
   return page.locator('[data-output="stdout"]');
 }
 
-async function run(page: Page, source: string, expectedStatus: string | RegExp) {
+async function run(page: Page, source: string, expectedStatus: string | RegExp, input = "") {
   await page.getByRole("textbox", { name: "main.cpp source code" }).fill(source);
-  await page.getByRole("button", { name: "Compile & Run" }).click();
+  await page.getByRole("textbox", { name: "test.txt stdin" }).fill(input);
+  await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText(expectedStatus, { timeout: 60_000 });
-  await expect(page.getByRole("button", { name: "Compile & Run" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run", exact: true })).toBeEnabled();
 }
 
-test("cold-loads Clang, runs C++20, reports errors, and reruns", async ({ page }) => {
+test("cold-loads Clang, runs C++20 with stdin, reports errors, and reruns", async ({ page }) => {
   test.setTimeout(120_000);
   const failures: string[] = [];
 
@@ -45,13 +46,15 @@ test("cold-loads Clang, runs C++20, reports errors, and reruns", async ({ page }
 #include <ranges>
 #include <vector>
 int main() {
-  std::vector<int> values{3, 1, 2};
+  std::vector<int> values;
+  for (int value; std::cin >> value;) values.push_back(value);
   std::ranges::sort(values);
   for (int value : values) std::cout << value;
   std::cout << "\\n";
 }
 `,
     "Exited with code 0",
+    "3 1\n2",
   );
   expect(await stdout(page).textContent()).toBe("123\n");
 
@@ -63,10 +66,15 @@ int main() {
   await run(
     page,
     `#include <iostream>
-int main() { std::cout << "recovered\\n"; }
+int main() {
+  int value;
+  std::cin >> value;
+  std::cout << "recovered:" << value << "\\n";
+}
 `,
     "Exited with code 0",
+    "42",
   );
-  expect(await stdout(page).textContent()).toBe("recovered\n");
+  expect(await stdout(page).textContent()).toBe("recovered:42\n");
   expect(failures, failures.join("\n")).toEqual([]);
 });

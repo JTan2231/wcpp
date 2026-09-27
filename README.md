@@ -13,6 +13,13 @@ bun start
 
 Then open <http://localhost:4173/wcpp/>.
 
+Write your program in `main.cpp`, paste its input into `test.txt (stdin)`, and
+click **Run** to compile and execute it. This mirrors the default `cf` / `r`
+workflow of running the compiled program with `< test.txt`: the input is supplied
+as UTF-8 text, followed by EOF. Empty input gives immediate EOF. Each click uses
+the current source and input, and the output appears in the stdout/stderr tabs.
+The browser workspace uses the C++20 toolchain described below.
+
 ## Verify
 
 ```sh
@@ -48,7 +55,7 @@ be stopped with `Worker.terminate()` without losing the warmed compiler.
 - Two-second execution timeout
 - 1 MB combined stdout/stderr limit
 - 128 MB linked maximum program memory
-- Empty stdin in the current UI
+- Stdin is supplied before each run; no interactive input while running
 
 ## Static hosting
 

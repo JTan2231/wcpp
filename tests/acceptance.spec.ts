@@ -50,6 +50,10 @@ function editor(page: Page) {
   return page.getByRole("textbox", { name: "main.cpp source code" });
 }
 
+function stdin(page: Page) {
+  return page.getByRole("textbox", { name: "test.txt stdin" });
+}
+
 function status(page: Page) {
   return page.getByRole("status");
 }
@@ -70,9 +74,9 @@ async function runSource(
   timeout = 45_000,
 ): Promise<void> {
   await editor(page).fill(source);
-  await page.getByRole("button", { name: "Compile & Run" }).click();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText(expectedStatus, { timeout });
-  await expect(page.getByRole("button", { name: "Compile & Run" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run", exact: true })).toBeEnabled();
 }
 
 async function openApp(page: Page): Promise<BrowserGuard> {
@@ -131,6 +135,46 @@ test("cout, clean diagnostics, and normal exit", async ({ page }) => {
   expect(await output(page, "Program stdout").textContent()).toBe("hello 42\n");
   expect(await output(page, "Program stderr").textContent()).toBe("No output.");
   await expect(diagnostics(page)).toContainText("No diagnostics.");
+  guard.assertClean();
+});
+
+test("reads multiple numbers from test.txt with cin", async ({ page }) => {
+  const guard = await openApp(page);
+  await stdin(page).fill("12 -5\n\t35");
+  await runSource(
+    page,
+    `#include <iostream>
+int main() {
+  int a, b, c;
+  std::cin >> a >> b >> c;
+  std::cout << a + b + c << '\\n';
+}
+`,
+    "Exited with code 0",
+  );
+
+  expect(await output(page, "Program stdout").textContent()).toBe("42\n");
+  await expect(diagnostics(page)).toContainText("No diagnostics.");
+  guard.assertClean();
+});
+
+test("preserves stdin bytes through EOF and replaces input on each run", async ({ page }) => {
+  const guard = await openApp(page);
+  const source = `#include <iostream>
+int main() {
+  char value;
+  while (std::cin.get(value)) std::cout.put(value);
+  std::cerr << (std::cin.eof() ? "EOF" : "READ ERROR");
+  return std::cin.eof() ? 0 : 1;
+}
+`;
+
+  for (const input of ["  café\t世界\n\nlast line  ", "", "replacement\n"]) {
+    await stdin(page).fill(input);
+    await runSource(page, source, "Exited with code 0");
+    expect(await output(page, "Program stdout").textContent()).toBe(input || "No output.");
+    expect(await output(page, "Program stderr").textContent()).toBe("EOF");
+  }
   guard.assertClean();
 });
 
@@ -252,7 +296,7 @@ int main() {
   for (;;) {}
 }
 `);
-  await page.getByRole("button", { name: "Compile & Run" }).click();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText("Running…", { timeout: 45_000 });
 
   await expect(output(page, "Program stdout")).toHaveText("loop-started\n");
