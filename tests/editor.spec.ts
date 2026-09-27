@@ -56,6 +56,20 @@ test("starts in Normal, supports i/a/o and groups each insertion for undo", asyn
   await expect(input).toHaveValue("big cat");
   await input.press("u");
   await expect(input).toHaveValue("cat");
+
+  await keys(input, ["g", "g", "i", "Tab"]);
+  await cursorAt(input, 4);
+  await input.pressSequentially("temporary");
+  await input.press("Control+w");
+  await expect(input).toHaveValue("    cat");
+  await cursorAt(input, 4);
+  await input.pressSequentially("big ");
+  await input.press("Escape");
+  await expect(input).toHaveValue("    big cat");
+  await input.press("u");
+  await expect(input).toHaveValue("cat");
+  await input.press("Control+r");
+  await expect(input).toHaveValue("    big cat");
 });
 
 test("moves by characters, words, lines and document boundaries", async ({ page }) => {
@@ -93,7 +107,7 @@ test("moves by characters, words, lines and document boundaries", async ({ page 
   await expect(input).toHaveValue("alpha beta\nx\n  final");
 });
 
-test("Ctrl+arrows jump words and blank-line-separated blocks in both modes", async ({ page }) => {
+test("Ctrl+arrows jump words and blocks, and Ctrl+W deletes to the same word boundary", async ({ page }) => {
   const input = page.getByRole("textbox", { name: "test.txt stdin" });
   const text = "alpha beta\nline\n \nnext block\n\nlast";
   await fillEditor(input, text);
@@ -101,6 +115,15 @@ test("Ctrl+arrows jump words and blank-line-separated blocks in both modes", asy
   await cursorAt(input, 6);
   await input.press("Control+ArrowLeft");
   await cursorAt(input, 0);
+  await input.press("Control+w");
+  await expect(input).toHaveValue(text);
+  await keys(input, ["Control+ArrowRight", "Control+w"]);
+  await expect(input).toHaveValue(text.slice(6));
+  await cursorAt(input, 0);
+  await input.press("u");
+  await expect(input).toHaveValue(text);
+  await cursorAt(input, 6);
+  await input.press("Control+ArrowLeft");
   await input.press("Control+ArrowDown");
   await cursorAt(input, text.indexOf("next"));
   await input.press("Control+ArrowDown");
@@ -227,7 +250,7 @@ test("native undo shortcuts include custom edits and new typing clears redo", as
   await expect(input).toHaveValue("one");
 });
 
-test("native copy/paste, mouse selection and Tab remain usable", async ({ page }) => {
+test("native clipboard and mouse selection work with Tab insertion and Shift+Tab navigation", async ({ page }) => {
   const source = page.getByRole("textbox", { name: "main.cpp source code" });
   const input = page.getByRole("textbox", { name: "test.txt stdin" });
   await fillEditor(source, "copy this");
@@ -247,7 +270,21 @@ test("native copy/paste, mouse selection and Tab remain usable", async ({ page }
   await source.press("u");
   await expect(source).toHaveValue("copy this");
   await source.press("Tab");
-  await expect(input).toBeFocused();
+  await expect(source).toHaveValue("    copy this");
+  await expect(source).toBeFocused();
+  await cursorAt(source, 4);
+  await source.press("u");
+  await expect(source).toHaveValue("copy this");
+  await keys(source, ["ControlOrMeta+a", "Tab"]);
+  await expect(source).toHaveValue("    ");
+  await source.press("u");
+  await expect(source).toHaveValue("copy this");
+  await keys(source, ["ControlOrMeta+a", "Control+w"]);
+  await expect(source).toHaveValue("");
+  await source.press("u");
+  await expect(source).toHaveValue("copy this");
+  await input.press("Shift+Tab");
+  await expect(source).toBeFocused();
   await source.click({ position: { x: 24, y: 20 } });
   const position = await source.evaluate((element: HTMLTextAreaElement) => element.selectionStart);
   expect(position).toBeLessThan(4);

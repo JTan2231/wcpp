@@ -39,9 +39,12 @@ a quick reference.
 | `u`, `Ctrl+r` | Undo/redo |
 | `Ctrl+Left/Right` | Move by word, in either mode |
 | `Ctrl+Up/Down` | Jump between blocks separated by blank lines, in either mode |
+| `Ctrl+w` | Delete back to the Ctrl+Left word boundary, or delete the selection, in either mode |
+| `Tab` | Insert 4 spaces, replacing any selection, in either mode |
+| `Shift+Tab` | Move focus to the previous control |
 
 The operating system may reserve some Ctrl+arrow shortcuts. Mouse selection,
-clipboard shortcuts, and Tab navigation remain available. Each editor keeps its
+clipboard shortcuts, and Shift+Tab navigation remain available. Each editor keeps its
 own cursor, mode, and undo history; `yy`, `dd`, and `x` use a shared register so
 `p` can paste between the two editors. This register is separate from the system
 clipboard. A completed Insert session or a Normal-mode edit is one undo step;

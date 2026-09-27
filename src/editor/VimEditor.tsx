@@ -202,6 +202,24 @@ export default function VimEditor({
       preferredColumn.current = null;
       return;
     }
+    const deleteWord = event.ctrlKey && key === "w";
+    const insertSpaces = !event.ctrlKey && key === "Tab";
+    if (!event.metaKey && !event.altKey && !event.shiftKey && (deleteWord || insertSpaces)) {
+      event.preventDefault();
+      setPending("");
+      const end = input.selectionEnd;
+      const start = deleteWord && position === end ? moveWord(current, position, -1) : position;
+      const inserted = insertSpaces ? "    " : "";
+      const next = current.slice(0, start) + inserted + current.slice(end);
+      const nextPosition = start + inserted.length;
+      if (mode === "insert") {
+        insertStart.current ??= snapshot();
+        replace(next, nextPosition);
+      } else {
+        edit(next, nextPosition);
+      }
+      return;
+    }
     if (event.metaKey || event.ctrlKey || event.altKey) {
       setPending("");
       return;
@@ -211,7 +229,7 @@ export default function VimEditor({
       if (/^(Arrow|Home|End|Page)/.test(key)) finishInsert();
       return;
     }
-    // Keep browser text selection and Tab navigation available in Normal mode.
+    // Keep browser text selection and Shift+Tab navigation available in Normal mode.
     if (event.shiftKey && /^(Arrow|Home|End|Page)/.test(key)) {
       setPending("");
       preferredColumn.current = null;

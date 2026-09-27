@@ -219,6 +219,7 @@ export default function App({ compilerClient }: AppProps) {
           <span><kbd>x</kbd> delete character · <kbd>dd</kbd> delete line · <kbd>yy</kbd> copy line · <kbd>p</kbd> paste</span>
           <span><kbd>u</kbd> undo · <kbd>Ctrl+r</kbd> redo · Cmd/Ctrl+Z also undoes</span>
           <span>Ctrl+←/→ words · Ctrl+↑/↓ blocks separated by blank lines, when available to the browser</span>
+          <span><kbd>Ctrl+w</kbd> delete back one word · <kbd>Tab</kbd> insert 4 spaces · <kbd>Shift+Tab</kbd> leave editor</span>
         </div>
       </details>
 
