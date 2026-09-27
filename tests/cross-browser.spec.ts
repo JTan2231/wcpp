@@ -10,8 +10,8 @@ function stdout(page: Page) {
 }
 
 async function run(page: Page, source: string, expectedStatus: string | RegExp, input = "") {
-  await fillEditor(page.getByRole("textbox", { name: "main.cpp source code" }), source);
-  await fillEditor(page.getByRole("textbox", { name: "test.txt stdin" }), input);
+  await fillEditor(page.getByRole("textbox", { name: "C++ source code" }), source);
+  await fillEditor(page.getByRole("textbox", { name: "Program input" }), input);
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText(expectedStatus, { timeout: 60_000 });
   await expect(page.getByRole("button", { name: "Run", exact: true })).toBeEnabled();
@@ -38,7 +38,7 @@ test("cold-loads Clang, runs C++20 with stdin, reports errors, and reruns", asyn
   });
 
   await page.goto(`./?engine=${test.info().project.name}`);
-  await expect(status(page)).toHaveText("Ready");
+  await expect(status(page)).toHaveText("");
 
   await run(
     page,
@@ -60,9 +60,7 @@ int main() {
   expect(await stdout(page).textContent()).toBe("123\n");
 
   await run(page, "int main() { return missing_name; }\n", /missing_name/);
-  await expect(
-    page.locator('[data-output="compiler"] li').first(),
-  ).toContainText("main.cpp:1:21");
+  await expect(status(page)).toContainText(/missing_name.*undeclared|undeclared.*missing_name/);
 
   await run(
     page,

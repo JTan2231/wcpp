@@ -48,24 +48,19 @@ function installBrowserGuard(page: Page): BrowserGuard {
 }
 
 function editor(page: Page) {
-  return page.getByRole("textbox", { name: "main.cpp source code" });
+  return page.getByRole("textbox", { name: "C++ source code" });
 }
 
 function stdin(page: Page) {
-  return page.getByRole("textbox", { name: "test.txt stdin" });
+  return page.getByRole("textbox", { name: "Program input" });
 }
 
 function status(page: Page) {
   return page.getByRole("status");
 }
 
-function output(page: Page, name: "Program stdout" | "Program stderr") {
-  const stream = name === "Program stdout" ? "stdout" : "stderr";
-  return page.locator(`[data-output="${stream}"]`);
-}
-
-function diagnostics(page: Page) {
-  return page.locator('[data-output="compiler"]');
+function output(page: Page) {
+  return page.getByRole("region", { name: "stdout", exact: true });
 }
 
 async function runSource(
@@ -83,7 +78,7 @@ async function runSource(
 async function openApp(page: Page): Promise<BrowserGuard> {
   const guard = installBrowserGuard(page);
   await page.goto("./");
-  await expect(status(page)).toHaveText("Ready");
+  await expect(status(page)).toHaveText("");
   return guard;
 }
 
@@ -93,7 +88,10 @@ test("uses one monochrome Courier output viewport without headings", async ({
   const guard = await openApp(page);
 
   await expect(page.locator("h1, h2, h3, h4, h5, h6")).toHaveCount(0);
-  await expect(page.getByRole("tablist", { name: "Output" })).toBeVisible();
+  await expect(output(page)).toBeVisible();
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await expect(page.locator(".editor-toolbar, .editor-mode")).toHaveCount(0);
+  await expect(page.getByText(/main\.cpp|test\.txt|stdin|ready/i)).toHaveCount(0);
 
   const styles = await page.evaluate(() => {
     const body = getComputedStyle(document.body);
@@ -116,26 +114,15 @@ test("uses one monochrome Courier output viewport without headings", async ({
     editorFont: expect.stringContaining("Courier New"),
   });
 
-  const paneBounds = [];
-  for (const view of ["compiler", "stdout", "stderr"] as const) {
-    await page.getByRole("tab", { name: view }).click();
-    await expect(page.getByRole("tabpanel")).toHaveCount(1);
-    const bounds = await page.locator(`[data-output="${view}"]`).boundingBox();
-    expect(bounds).not.toBeNull();
-    paneBounds.push(bounds);
-  }
-  expect(paneBounds[1]).toEqual(paneBounds[0]);
-  expect(paneBounds[2]).toEqual(paneBounds[0]);
+  await expect(page.locator("[data-output]")).toHaveCount(1);
   guard.assertClean();
 });
 
-test("cout, clean diagnostics, and normal exit", async ({ page }) => {
+test("cout and normal exit", async ({ page }) => {
   const guard = await openApp(page);
   await runSource(page, HELLO_SOURCE, "Exited with code 0");
 
-  expect(await output(page, "Program stdout").textContent()).toBe("hello 42\n");
-  expect(await output(page, "Program stderr").textContent()).toBe("No output.");
-  await expect(diagnostics(page)).toContainText("No diagnostics.");
+  expect(await output(page).textContent()).toBe("hello 42\n");
   guard.assertClean();
 });
 
@@ -154,8 +141,7 @@ int main() {
     "Exited with code 0",
   );
 
-  expect(await output(page, "Program stdout").textContent()).toBe("42\n");
-  await expect(diagnostics(page)).toContainText("No diagnostics.");
+  expect(await output(page).textContent()).toBe("42\n");
   guard.assertClean();
 });
 
@@ -173,7 +159,7 @@ int main() {
   for (const key of ["g", "g", "d", "d"]) await stdin(page).press(key);
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText("Exited with code 0");
-  await expect(output(page, "Program stdout")).toHaveText("41\n");
+  await expect(output(page)).toHaveText("41\n");
   guard.assertClean();
 });
 
@@ -191,13 +177,12 @@ int main() {
   for (const input of ["  café\t世界\n\nlast line  ", "", "replacement\n"]) {
     await fillEditor(stdin(page), input);
     await runSource(page, source, "Exited with code 0");
-    expect(await output(page, "Program stdout").textContent()).toBe(input || "No output.");
-    expect(await output(page, "Program stderr").textContent()).toBe("EOF");
+    expect(await output(page).textContent()).toBe(input || "No output.");
   }
   guard.assertClean();
 });
 
-test("reports an exact compiler error location", async ({ page }) => {
+test("reports compiler errors in the status", async ({ page }) => {
   const guard = await openApp(page);
   await runSource(
     page,
@@ -208,12 +193,8 @@ test("reports an exact compiler error location", async ({ page }) => {
     /missing_name/,
   );
 
-  const firstDiagnostic = diagnostics(page).locator("li").first();
-  await expect(firstDiagnostic).toContainText("error");
-  await expect(firstDiagnostic).toContainText("main.cpp:2:10");
-  await expect(firstDiagnostic).toContainText(/missing_name.*undeclared|undeclared.*missing_name/);
-  expect(await output(page, "Program stdout").textContent()).toBe("No output.");
-  expect(await output(page, "Program stderr").textContent()).toBe("No output.");
+  await expect(status(page)).toContainText(/missing_name.*undeclared|undeclared.*missing_name/);
+  expect(await output(page).textContent()).toBe("No output.");
   guard.assertClean();
 });
 
@@ -235,13 +216,11 @@ int main() {
     "Exited with code 0",
   );
 
-  expect(await output(page, "Program stdout").textContent()).toBe("apple\nbanana\npear\n");
-  expect(await output(page, "Program stderr").textContent()).toBe("No output.");
-  await expect(diagnostics(page)).toContainText("No diagnostics.");
+  expect(await output(page).textContent()).toBe("apple\nbanana\npear\n");
   guard.assertClean();
 });
 
-test("keeps stdout and stderr separate", async ({ page }) => {
+test("shows only stdout when the program also writes stderr", async ({ page }) => {
   const guard = await openApp(page);
   await runSource(
     page,
@@ -254,8 +233,7 @@ int main() {
     "Exited with code 0",
   );
 
-  expect(await output(page, "Program stdout").textContent()).toBe("stdout-line\n");
-  expect(await output(page, "Program stderr").textContent()).toBe("stderr-line\n");
+  expect(await output(page).textContent()).toBe("stdout-line\n");
   guard.assertClean();
 });
 
@@ -263,8 +241,7 @@ test("reports a nonzero exit code as a completed process", async ({ page }) => {
   const guard = await openApp(page);
   await runSource(page, "int main() { return 7; }\n", "Exited with code 7");
 
-  expect(await output(page, "Program stdout").textContent()).toBe("No output.");
-  expect(await output(page, "Program stderr").textContent()).toBe("No output.");
+  expect(await output(page).textContent()).toBe("No output.");
   guard.assertClean();
 });
 
@@ -273,7 +250,7 @@ test("contains a Wasm trap and recovers on the next run", async ({ page }) => {
   await runSource(page, "int main() { __builtin_trap(); }\n", /unreachable|trap/i);
 
   await runSource(page, HELLO_SOURCE, "Exited with code 0");
-  expect(await output(page, "Program stdout").textContent()).toBe("hello 42\n");
+  expect(await output(page).textContent()).toBe("hello 42\n");
   guard.assertClean();
 });
 
@@ -318,7 +295,7 @@ int main() {
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(status(page)).toHaveText("Running…", { timeout: 45_000 });
 
-  await expect(output(page, "Program stdout")).toHaveText("loop-started\n");
+  await expect(output(page)).toHaveText("loop-started\n");
   await expect(status(page)).toHaveText("Running…");
   const action = await Promise.race([
     page.evaluate(() => document.querySelector("button.button")?.textContent),
@@ -350,7 +327,7 @@ int main() {
   guard.assertClean();
 });
 
-test("caps program output at one megabyte and recovers", async ({ page }) => {
+test("caps combined stdout/stderr output at one megabyte and recovers", async ({ page }) => {
   test.setTimeout(120_000);
   const guard = await openApp(page);
   await runSource(
@@ -370,7 +347,7 @@ int main() {
     90_000,
   );
 
-  const stdoutStats = await output(page, "Program stdout").evaluate((element) => {
+  const stdoutStats = await output(page).evaluate((element) => {
     const text = element.textContent ?? "";
     return {
       length: text.length,
@@ -379,28 +356,12 @@ int main() {
       hasUnexpectedCharacter: /[^o]/.test(text),
     };
   });
-  const stderrStats = await output(page, "Program stderr").evaluate((element) => {
-    const text = element.textContent ?? "";
-    return {
-      length: text.length,
-      first: text.at(0),
-      last: text.at(-1),
-      hasUnexpectedCharacter: /[^e]/.test(text),
-    };
-  });
   expect(stdoutStats).toEqual({
     length: 600_003,
     first: "o",
     last: "o",
     hasUnexpectedCharacter: false,
   });
-  expect(stderrStats).toEqual({
-    length: 399_997,
-    first: "e",
-    last: "e",
-    hasUnexpectedCharacter: false,
-  });
-  expect(stdoutStats.length + stderrStats.length).toBe(1_000_000);
 
   await runSource(page, HELLO_SOURCE, "Exited with code 0");
   guard.assertClean();
@@ -417,7 +378,7 @@ test("reuses the warm compiler for twenty consecutive builds", async ({ page }) 
   });
 
   await page.goto("./");
-  await expect(status(page)).toHaveText("Ready");
+  await expect(status(page)).toHaveText("");
 
   await runSource(page, HELLO_SOURCE, "Exited with code 0");
   const requestsAfterFirstBuild = toolchainRequests;
@@ -434,9 +395,7 @@ int main() { std::cout << "warm:${index}\\n"; }
       10_000,
     );
     expect(performance.now() - started).toBeLessThan(10_000);
-    expect(await output(page, "Program stdout").textContent()).toBe(`warm:${index}\n`);
-    expect(await output(page, "Program stderr").textContent()).toBe("No output.");
-    await expect(diagnostics(page)).toContainText("No diagnostics.");
+    expect(await output(page).textContent()).toBe(`warm:${index}\n`);
   }
 
   expect(toolchainRequests).toBe(requestsAfterFirstBuild);
@@ -483,10 +442,10 @@ test("passes three true Chrome cold starts with same-origin static assets", asyn
 
         const started = performance.now();
         await page.goto(`http://127.0.0.1:4173/wcpp/?cold=${iteration}`);
-        await expect(status(page)).toHaveText("Ready");
+        await expect(status(page)).toHaveText("");
         await runSource(page, HELLO_SOURCE, "Exited with code 0", 60_000);
         expect(performance.now() - started).toBeLessThan(60_000);
-        expect(await output(page, "Program stdout").textContent()).toBe("hello 42\n");
+        expect(await output(page).textContent()).toBe("hello 42\n");
         expect(Object.fromEntries(assetCounts)).toEqual(expectedAssetCounts);
         expect(assetResponseFailures).toEqual([]);
         guard.assertClean();

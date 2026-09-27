@@ -4,16 +4,28 @@ import VimEditor, { type Yank } from "./editor/VimEditor";
 
 import type {
   CompilerClient,
-  CompilerDiagnostic,
   CompilerPhase,
   CompilerWorkerEvent,
 } from "./protocol";
 
 const DEFAULT_SOURCE = `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+void solve() {
+
+}
 
 int main() {
-  std::cout << "Hello from C++!\\n";
-  return 0;
+    ios_base::sync_with_stdio(0);
+    cin.tie(0); cout.tie(0);
+    int tc = 1;
+    // cin >> tc;
+    for (int t = 1; t <= tc; t++) {
+        // cout << "Case #" << t << ": ";
+        solve();
+    }
 }
 `;
 
@@ -27,20 +39,8 @@ interface AppProps {
   compilerClient?: CompilerClient;
 }
 
-type OutputView = "compiler" | "stdout" | "stderr";
-
-const OUTPUT_VIEWS: OutputView[] = ["compiler", "stdout", "stderr"];
-
 function makeRequestId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-}
-
-function diagnosticLocation(diagnostic: CompilerDiagnostic): string {
-  if (!diagnostic.file) return "";
-
-  const line = diagnostic.line ? `:${diagnostic.line}` : "";
-  const column = diagnostic.column ? `:${diagnostic.column}` : "";
-  return `${diagnostic.file}${line}${column}`;
 }
 
 export default function App({ compilerClient }: AppProps) {
@@ -49,12 +49,10 @@ export default function App({ compilerClient }: AppProps) {
   const yankRegister = useRef<Yank | null>(null);
   const [phase, setPhase] = useState<CompilerPhase>("idle");
   const [status, setStatus] = useState(
-    compilerClient ? "Ready" : "Compiler client is not connected",
+    compilerClient ? "" : "Compiler client is not connected",
   );
-  const [diagnostics, setDiagnostics] = useState<CompilerDiagnostic[]>([]);
   const [stdout, setStdout] = useState("");
-  const [stderr, setStderr] = useState("");
-  const [outputView, setOutputView] = useState<OutputView>("compiler");
+  const runButton = useRef<HTMLButtonElement>(null);
   const activeRequestId = useRef<string | null>(null);
   const activeCompilerClient = useRef<CompilerClient | null>(null);
 
@@ -68,7 +66,7 @@ export default function App({ compilerClient }: AppProps) {
     }
 
     setPhase("idle");
-    setStatus("Ready");
+    setStatus("");
 
     const handleEvent = (event: CompilerWorkerEvent) => {
       if (
@@ -81,20 +79,13 @@ export default function App({ compilerClient }: AppProps) {
       switch (event.type) {
         case "phase":
           setPhase(event.phase);
-          if (event.phase === "running") setOutputView("stdout");
           setStatus(
             event.message ??
               (event.phase === "compiling" ? "Compiling…" : "Running…"),
           );
           break;
-        case "diagnostics":
-          setDiagnostics(event.diagnostics);
-          break;
         case "stdout":
           setStdout((current) => current + event.chunk);
-          break;
-        case "stderr":
-          setStderr((current) => current + event.chunk);
           break;
         case "finished":
           setPhase("finished");
@@ -129,6 +120,21 @@ export default function App({ compilerClient }: AppProps) {
     };
   }, [compilerClient]);
 
+  useEffect(() => {
+    const handleRunShortcut = (event: KeyboardEvent) => {
+      if (
+        event.key !== "'" || !event.ctrlKey || event.metaKey ||
+        event.altKey || event.shiftKey || event.isComposing
+      ) return;
+
+      event.preventDefault();
+      if (!event.repeat) runButton.current?.click();
+    };
+
+    window.addEventListener("keydown", handleRunShortcut);
+    return () => window.removeEventListener("keydown", handleRunShortcut);
+  }, []);
+
   const isActive = ACTIVE_PHASES.has(phase);
 
   const compileAndRun = () => {
@@ -143,10 +149,7 @@ export default function App({ compilerClient }: AppProps) {
     activeCompilerClient.current = compilerClient;
     setPhase("compiling");
     setStatus("Compiling…");
-    setDiagnostics([]);
     setStdout("");
-    setStderr("");
-    setOutputView("compiler");
 
     try {
       compilerClient.compileAndRun({
@@ -179,8 +182,11 @@ export default function App({ compilerClient }: AppProps) {
           {status}
         </span>
         <button
+          ref={runButton}
           className="button"
           type="button"
+          aria-keyshortcuts="Control+'"
+          title="Run / Cancel (Ctrl+')"
           onClick={isActive ? cancel : compileAndRun}
           disabled={!isActive && source.trim().length === 0}
         >
@@ -191,8 +197,7 @@ export default function App({ compilerClient }: AppProps) {
       <div className="editors">
         <VimEditor
           id="source-editor"
-          label="main.cpp"
-          ariaLabel="main.cpp source code"
+          ariaLabel="C++ source code"
           className="source-editor"
           value={source}
           onChange={setSource}
@@ -200,8 +205,7 @@ export default function App({ compilerClient }: AppProps) {
         />
         <VimEditor
           id="stdin-editor"
-          label="test.txt (stdin)"
-          ariaLabel="test.txt stdin"
+          ariaLabel="Program input"
           className="stdin-editor"
           value={stdin}
           onChange={setStdin}
@@ -211,8 +215,9 @@ export default function App({ compilerClient }: AppProps) {
       </div>
 
       <details className="editor-help">
-        <summary id="editor-shortcuts">i to type · Esc for Normal · Keyboard shortcuts</summary>
+        <summary id="editor-shortcuts">Keyboard shortcuts</summary>
         <div className="editor-shortcuts">
+          <span><kbd>Ctrl+'</kbd> run / cancel · <kbd>Esc</kbd> return to Normal</span>
           <span><kbd>i</kbd> insert before · <kbd>a</kbd> after · <kbd>o</kbd> new line below</span>
           <span><kbd>h j k l</kbd> / arrows move · <kbd>w b</kbd> move by word</span>
           <span><kbd>0 $</kbd> line start / end · <kbd>gg G</kbd> first / last line</span>
@@ -224,68 +229,16 @@ export default function App({ compilerClient }: AppProps) {
       </details>
 
       <div className="output">
-        <div className="output-tabs" role="tablist" aria-label="Output">
-          {OUTPUT_VIEWS.map((view) => (
-            <button
-              id={`output-tab-${view}`}
-              className="output-tab"
-              type="button"
-              role="tab"
-              aria-controls={`output-panel-${view}`}
-              aria-selected={outputView === view}
-              key={view}
-              onClick={() => setOutputView(view)}
-            >
-              {view}
-            </button>
-          ))}
-        </div>
-
+        <div className="output-label" id="output-label">stdout</div>
         <div className="output-viewport">
-          <div
-            id="output-panel-compiler"
-            className="output-pane diagnostics"
-            role="tabpanel"
-            aria-labelledby="output-tab-compiler"
-            data-output="compiler"
-            hidden={outputView !== "compiler"}
-          >
-            {diagnostics.length === 0 ? (
-              <p>No diagnostics.</p>
-            ) : (
-              <ul>
-                {diagnostics.map((diagnostic, index) => {
-                  const location = diagnosticLocation(diagnostic);
-                  return (
-                    <li key={`${location}-${index}`}>
-                      <span className="severity">{diagnostic.severity}</span>
-                      {location && <code>{location}</code>}
-                      <span>{diagnostic.message}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
           <pre
             id="output-panel-stdout"
             className="output-pane"
-            role="tabpanel"
-            aria-labelledby="output-tab-stdout"
+            role="region"
+            aria-labelledby="output-label"
             data-output="stdout"
-            hidden={outputView !== "stdout"}
           >
             {stdout || "No output."}
-          </pre>
-          <pre
-            id="output-panel-stderr"
-            className="output-pane"
-            role="tabpanel"
-            aria-labelledby="output-tab-stderr"
-            data-output="stderr"
-            hidden={outputView !== "stderr"}
-          >
-            {stderr || "No output."}
           </pre>
         </div>
       </div>

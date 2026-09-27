@@ -13,19 +13,21 @@ bun start
 
 Then open <http://localhost:4173/wcpp/>.
 
-Write your program in `main.cpp`, paste its input into `test.txt (stdin)`, and
-click **Run** to compile and execute it. This mirrors the default `cf` / `r`
+Write your program in the source editor, paste its input into the input editor, and
+click **Run** or press **Ctrl+'** to compile and execute it. The source starts with
+the `main.cpp` template from the local `cf` command. This mirrors the default `cf` / `r`
 workflow of running the compiled program with `< test.txt`: the input is supplied
 as UTF-8 text, followed by EOF. Empty input gives immediate EOF. Each click uses
-the current source and input, and the output appears in the stdout/stderr tabs.
+the current source and input, and standard output appears below the editors.
+Compiler failures and execution status appear beside the button. Ctrl+' also
+cancels an active run, just like the button.
 The browser workspace uses the C++20 toolchain described below.
 
 ## Text editing
 
 Both editors start in **Normal** mode, with a block cursor in the focused editor.
-Press `i` to type in **Insert** mode and `Esc` to return to Normal. The mode is
-shown beside each filename; expand **Keyboard shortcuts** below the editors for
-a quick reference.
+Press `i` to type in **Insert** mode and `Esc` to return to Normal. Expand
+**Keyboard shortcuts** below the editors for a quick reference.
 
 | Keys | Behavior |
 | --- | --- |
@@ -61,8 +63,8 @@ bun run test:acceptance
 ```
 
 The acceptance suite uses real Chrome for the full behavior and safety matrix,
-plus Firefox and WebKit smoke coverage. It verifies compiler diagnostics,
-standard-library programs, stdout/stderr isolation, exit codes, traps, timeout
+plus Firefox and WebKit smoke coverage. It verifies compiler errors,
+standard-library programs, stdout display, exit codes, traps, timeout
 and output limits, warm compiler reuse, and cold browser starts.
 Editor behavior is covered in Chrome, Firefox, and WebKit. To run only those checks:
 

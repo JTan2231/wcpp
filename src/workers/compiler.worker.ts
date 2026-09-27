@@ -85,7 +85,7 @@ worker.onmessage = async (event: MessageEvent<BuildWorkerCommand>) => {
     const { runClang } = await loadToolchain();
     toolchainLoaded = true;
 
-    send({ type: "phase", requestId, message: "Compiling and linking main.cpp…" });
+    send({ type: "phase", requestId, message: "Compiling and linking…" });
     const files = await runClang(
       [
         "clang++",

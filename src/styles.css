@@ -69,27 +69,7 @@ kbd {
 .editor-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   min-width: 0;
-}
-
-.editor-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.editor-mode {
-  border: 1px solid #000;
-  padding: 1px 4px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-[data-mode="insert"] .editor-mode {
-  color: #fff;
-  background: #000;
 }
 
 .editor-surface {
@@ -176,38 +156,17 @@ button:focus-visible {
   border: 1px solid #000;
 }
 
-.output-tabs {
-  display: flex;
+.output-label {
   border-bottom: 1px solid #000;
-}
-
-.output-tab {
-  border: 0;
-  border-right: 1px solid #000;
-  border-radius: 0;
   padding: 5px 9px;
-  color: #000;
-  background: #fff;
-  cursor: pointer;
-}
-
-.output-tab[aria-selected="true"] {
-  color: #fff;
-  background: #000;
-}
-
-.output-tab:hover:not([aria-selected="true"]) {
-  text-decoration: underline;
 }
 
 .output-viewport {
-  display: grid;
   height: 180px;
   overflow: auto;
 }
 
 .output-pane {
-  grid-area: 1 / 1;
   min-width: 0;
   margin: 0;
   padding: 10px;
@@ -217,24 +176,6 @@ button:focus-visible {
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.diagnostics p,
-.diagnostics ul {
-  margin: 0;
-}
-
-.diagnostics ul {
-  display: grid;
-  gap: 4px;
-  padding: 0;
-  list-style: none;
-}
-
-.diagnostics li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1ch;
 }
 
 @media (max-width: 600px) {

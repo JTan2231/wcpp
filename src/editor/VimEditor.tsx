@@ -28,7 +28,6 @@ interface Snapshot {
 
 interface VimEditorProps {
   id: string;
-  label: string;
   ariaLabel: string;
   className: string;
   value: string;
@@ -39,7 +38,6 @@ interface VimEditorProps {
 
 export default function VimEditor({
   id,
-  label,
   ariaLabel,
   className,
   value,
@@ -318,12 +316,6 @@ export default function VimEditor({
 
   return (
     <div className="editor-field" data-mode={mode}>
-      <div className="editor-toolbar">
-        <label htmlFor={id}>{label}</label>
-        <span className="editor-mode" aria-live="polite" aria-atomic="true" aria-label={`${label} mode`}>
-          {mode.toUpperCase()}{pending && ` ${pending}`}
-        </span>
-      </div>
       <div className="editor-surface">
         <textarea
           ref={textarea}
